@@ -7,20 +7,14 @@ from keras.layers import *
 from keras.datasets import mnist
 
 input_img = Input(shape=(784,))
-encoded = Dense(32, activation='relu') # Dense 레이어만 존재 -> input_img로 입력
-encoded = encoded(input_img) # 입력을 받은 덴스레이어
-decoded = Dense(784, activation='sigmoid') #왜 sigmoid를 쓰는가? 0~1로 정규화 min_max정규화
-decoded = decoded(encoded)
+encoded = Dense(128, activation='relu')(input_img) # Dense 레이어만 존재 -> input_img로 입력
+encoded = Dense(64, activation='relu')(encoded)
+encoded = Dense(32, activation='relu')(encoded)
+decoded = Dense(64, activation='sigmoid')(encoded)
+decoded = Dense(128, activation='sigmoid')(decoded)
+decoded = Dense(784, activation='sigmoid')(decoded)#왜 sigmoid를 쓰는가? 0~1로 정규화 min_max정규화
 autoencoder = Model(input_img, decoded) # (입력, 출력) 입력~출력이 범위
 autoencoder.summary()
-
-encoder = Model(input_img, encoded)
-encoder.summary()
-
-encoder_input = Input(shape=(32,))
-decoder_layer = autoencoder.layers[-1] #모델을 슬라이싱 할 수 있다
-decoder = Model(encoder_input, decoder_layer(encoder_input)) #인코더 입력 ~ 디코더 레이어까지 입출력
-decoder.summary()
 
 autoencoder.compile(optimizer='adam', loss='binary_crossentropy')
 # 라벨을 쓰지않는다 -> 비지도 학습
@@ -34,8 +28,7 @@ flatted_x_test = x_test.reshape(-1, 784)
 fit_hist = autoencoder.fit(flatted_x_train, flatted_x_train, epochs=50,
             batch_size=256, validation_data=(flatted_x_test, flatted_x_test))
 
-encoded_img = encoder.predict(x_test[:10].reshape(-1, 784))
-decoded_img = decoder.predict(encoded_img)
+decoded_img = autoencoder.predict(flatted_x_test[:10])
 
 n = 10
 plt.gray()
